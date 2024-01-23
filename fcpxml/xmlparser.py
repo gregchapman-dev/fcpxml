@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# Purpose:       fcpxml is a parser for Final Cut Pro XML files (.fcpxml files)
+# Purpose:       fcpxml is a utilities package for Final Cut Pro XML files (.fcpxml files)
 #                XMLParser is the XML parser engine (built on xml.etree.ElementTree)
 #
 # Authors:       Greg Chapman <gregc@mac.com>
@@ -7,7 +7,7 @@
 # Copyright:     (c) 2024 Greg Chapman
 # License:       MIT, see LICENSE
 # ------------------------------------------------------------------------------
-#
+
 import sys
 import typing as t
 from pathlib import Path
