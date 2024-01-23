@@ -27,6 +27,8 @@ class XMLParser:
             try:
                 xml = Path(xml)
             except Exception:  # pylint: disable=broad-exception-caught
+                if t.TYPE_CHECKING:
+                    assert isinstance(xml, str)
                 xmlStr = xml
 
         if isinstance(xml, Path):
@@ -74,24 +76,32 @@ class XMLParser:
     # The callable will receive two arguments (refcon, element) and is required to return
     # True (please continue parsing) or False (you can stop, I have everything
     # I need).
-    def parse(self, callbacks: dict[str, tuple[t.Callable[[t.Any], bool], t.Any]]) -> bool:
+    def parse(self, callbacks: dict[str, tuple[t.Callable[[t.Any, Element], bool], t.Any]]) -> bool:
         # returns True if successful, False if failure occurred (early termination due
         # to callable returning False is NOT a failure; True will be returned here.)
-        if not self.isValid:
+        if not self.element:
             print('ERROR: No XML to parse, XMLParser initialization failed', file=sys.stderr)
             return False
 
         # scan the XML creating a set of all the elements that will require a callback
-        elementsToCallback: dict[Element, tuple[t.Callable[[t.Any], bool], t.Any]] = {}
+        elementsToCallback: dict[Element, tuple[t.Callable[[t.Any, Element], bool], t.Any]] = {}
         for key, value in callbacks.items():
             elements: list[Element] = self.element.findall(key)
             for el in elements:
                 elementsToCallback[el] = value
 
+        if not elementsToCallback:
+            print('Warning: No matching elements found.', file=sys.stderr)
+            return True
+
         # walk through every element in document order, calling back if appropriate
-        callback: t.Callable[[t.Any], bool]
+        callback: t.Callable[[t.Any, Element], bool]
         refcon: t.Any
         for el in self.element.iter('*'):
             if el in elementsToCallback:
                 callback, refcon = elementsToCallback[el]
-                callback(refcon, el)
+                if not callback(refcon, el):
+                    print('Callback requested early termination.', file=sys.stderr)
+                    return True
+
+        return True

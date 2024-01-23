@@ -9,8 +9,8 @@
 # Copyright:     (c) 2024 Greg Chapman
 # License:       MIT, see LICENSE
 # ------------------------------------------------------------------------------
-import sys
 import datetime
+import typing as t
 from pathlib import Path
 from fractions import Fraction
 from xml.etree.ElementTree import Element
@@ -47,8 +47,8 @@ class AssetClipsCSV:
                     durNumStr = duration
 
                 startTime: Fraction = Fraction(int(tsNumStr), int(tsDenStr))
-                duration: Fraction = Fraction(int(durNumStr), int(durDenStr))
-                endTime: Fraction = startTime + duration
+                dur: Fraction = Fraction(int(durNumStr), int(durDenStr))
+                endTime: Fraction = startTime + dur
 
                 startStr: str = str(datetime.timedelta(seconds=round(startTime)))
                 endStr: str = str(datetime.timedelta(seconds=round(endTime)))
@@ -59,7 +59,8 @@ class AssetClipsCSV:
             # from './resources/asset/media-rep' elements, so we can put at
             # least part of the file path in the name.
             assetName: str = assetClipEl.get('name', '')
-            assetDuration: str = assetClipEl.get('duration') # we'll get the timescale from this
+            # maybe later: assetDuration: str = assetClipEl.get('duration', '')
+
             # assetClipDict contains:
             #   key = str(timeRange)
             #   value = tuple(list(keywords), note)
@@ -77,7 +78,7 @@ class AssetClipsCSV:
                 note: str = kwEl.get('note', '')
                 assetClipDict[timeRange] = (keywordList, note)
 
-            print('hey')
+            return True  # please keep feeding me Elements
 
         def escapedCSVEntry(entry: str) -> str:
             output: str = entry
@@ -115,7 +116,7 @@ class AssetClipsCSV:
 
         # now take csvObj and write it out as a CSV file
         # name, timeRange, note, keyword1, keyword2, ...
-        with open(csvPath, 'wt') as f:
+        with open(csvPath, 'wt', encoding='utf-8') as f:
             print('Movie Name,Time Range,Note,Keywords...', file=f)
             for assetName, assetClipDict in csvObj.items():
                 for timeRange, keywordsAndNote in assetClipDict.items():
@@ -136,5 +137,3 @@ class AssetClipsCSV:
                     print('', file=f)  # EOL, finally
 
         return True
-
-
