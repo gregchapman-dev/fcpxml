@@ -1,5 +1,6 @@
 # ------------------------------------------------------------------------------
 # Purpose:       fcpxml is a parser for Final Cut Pro XML files (.fcpxml files)
+#                XMLParser is the XML parser engine (built on xml.etree.ElementTree)
 #
 # Authors:       Greg Chapman <gregc@mac.com>
 #
@@ -12,7 +13,7 @@ import typing as t
 from pathlib import Path
 from xml.etree.ElementTree import Element, fromstring, ParseError, ElementTree
 
-class FCPXML:
+class XMLParser:
     def __init__(self, xml: str | Path | Element):
         self.element: Element | None = None
 
@@ -60,7 +61,7 @@ class FCPXML:
                 print(f'ERROR: Parsing the XML failed with "{parseErr}".', file=sys.stderr)
                 return
 
-        print(f'ERROR: FCPXML received incorrect arg type: {type(xml)}', file=sys.stderr)
+        print(f'ERROR: XMLParser received incorrect arg type: {type(xml)}', file=sys.stderr)
 
     @property
     def isValid(self) -> bool:
@@ -77,7 +78,7 @@ class FCPXML:
         # returns True if successful, False if failure occurred (early termination due
         # to callable returning False is NOT a failure; True will be returned here.)
         if not self.isValid:
-            print('ERROR: No XML to parse, FCPXML initialization failed', file=sys.stderr)
+            print('ERROR: No XML to parse, XMLParser initialization failed', file=sys.stderr)
             return False
 
         # scan the XML creating a set of all the elements that will require a callback
@@ -94,7 +95,3 @@ class FCPXML:
             if el in elementsToCallback:
                 callback, refcon = elementsToCallback[el]
                 callback(refcon, el)
-            else:
-                pass
-
-
