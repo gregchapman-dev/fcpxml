@@ -7,4 +7,4 @@
 # License:       MIT, see LICENSE
 # ------------------------------------------------------------------------------
 #
-from .fcpxml import FCPXML
+from .fcpxml import XMLParser
