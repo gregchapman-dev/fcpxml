@@ -14,7 +14,7 @@ if __name__ == '__main__':
     setuptools.setup(
         name='fcpxml',
         version='0.9a1',
-        description='A Final Cut Pro XML parser',
+        description='Final Cut Pro XML Utilities',
         packages=setuptools.find_packages(),
         python_requires='>=3.10',
     )
