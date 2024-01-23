@@ -17,7 +17,6 @@ from fcpxml import XMLParser
 
 class AssetClipsCSV:
     def __init__(self, xml: str | Path | Element):
-        self.csv: str = ''
         self.parser = XMLParser(xml)
 
     def writeCSV(self, csvPath: str | Path) -> bool:
@@ -26,7 +25,9 @@ class AssetClipsCSV:
                 # we can make it much more human readable
                 return startTime + '-' + duration
 
-            # just name for now, could make a name->fileName/filePath mapping from './resources/asset/media-rep' elements
+            # just name for now, could make a name->fileName/filePath mapping
+            # from './resources/asset/media-rep' elements, so we can put at
+            # least part of the file path in the name.
             assetName: str = assetClipEl.get('name', '')
             assetDuration: str = assetClipEl.get('duration') # we'll get the timescale from this
             # assetClipDict contains:
@@ -48,14 +49,61 @@ class AssetClipsCSV:
 
             print('hey')
 
+        def escapedCSVEntry(entry: str) -> str:
+            output: str = entry
+            if ',' in entry:
+                # first escape any double-quotes (so we can use double quotes around entry)
+                output = ''
+                for ch in entry:
+                    if ch == '"':
+                        output += ch + ch
+                    else:
+                        output += ch
+
+                # next, put double-quotes around entry to escape any commas.
+                output = '"' + output + '"'
+            return output
+
+
         if not self.parser.isValid:
             return False
 
-        csvObj: dict = {}
+        # csvObj is a dict with:
+        #   key = assetName
+        #   value = assetClipDict
+        # assetClipDict is a dict with:
+        #   key = timeRange
+        #   value = keywordsAndNote
+        # keywordsAndNote is a tuple of:
+        #   keywords: list[str]
+        #   note: str
+        csvObj: dict[str, dict[str, tuple[list[str], str]]] = {}
         callbacks: dict[str, tuple[t.Callable[[t.Any, Element], bool], t.Any]] = {
             './library/event/asset-clip': (assetClipCallback, csvObj)
         }
         self.parser.parse(callbacks)
+
+        # now take csvObj and write it out as a CSV file
+        # name, timeRange, note, keyword1, keyword2, ...
+        with open(csvPath, 'wt') as f:
+            print('Movie Name,Time Range,Note,Keywords...', file=f)
+            for assetName, assetClipDict in csvObj.items():
+                for timeRange, keywordsAndNote in assetClipDict.items():
+                    print(
+                        f'{escapedCSVEntry(assetName)},{escapedCSVEntry(timeRange)}',
+                        end='',
+                        file=f
+                    )
+                    keywords: list[str] = keywordsAndNote[0]
+                    note: str = keywordsAndNote[1]
+                    if keywords or note:
+                        if note:
+                            print(f',{escapedCSVEntry(note)}', end='', file=f)
+                        else:
+                            print(',', end='', file=f)
+                        for keyword in keywords:
+                            print(f',{escapedCSVEntry(keyword)}', end='', file=f)
+                    print('', file=f)  # EOL, finally
 
         return True
 
