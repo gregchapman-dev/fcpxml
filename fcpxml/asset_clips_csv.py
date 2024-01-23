@@ -10,7 +10,9 @@
 # License:       MIT, see LICENSE
 # ------------------------------------------------------------------------------
 import sys
+import datetime
 from pathlib import Path
+from fractions import Fraction
 from xml.etree.ElementTree import Element
 
 from fcpxml import XMLParser
@@ -21,9 +23,37 @@ class AssetClipsCSV:
 
     def writeCSV(self, csvPath: str | Path) -> bool:
         def assetClipCallback(csvObj, assetClipEl: Element) -> bool:
-            def getTimeRange(startTime: str, duration: str) -> str:
-                # we can make it much more human readable
-                return startTime + '-' + duration
+            def getTimeRange(timeStamp: str, duration: str) -> str:
+                # timeStamp and duration both must be of the form:
+                # Ns (for an integer number of seconds) or N/Ms (for a fractional number of seconds)
+                if timeStamp[-1] != 's' and duration[-1] != 's':
+                    return timeStamp + '-' + duration
+                timeStamp = timeStamp[:-1]
+                duration = duration[:-1]
+
+                tsNumStr: str = ''
+                tsDenStr: str = '1'
+                durNumStr: str = ''
+                durDenStr: str = '1'
+
+                if '/' in timeStamp:
+                    tsNumStr, tsDenStr = timeStamp.split('/', 1)
+                else:
+                    tsNumStr = timeStamp
+
+                if '/' in duration:
+                    durNumStr, durDenStr = duration.split('/', 1)
+                else:
+                    durNumStr = duration
+
+                startTime: Fraction = Fraction(int(tsNumStr), int(tsDenStr))
+                duration: Fraction = Fraction(int(durNumStr), int(durDenStr))
+                endTime: Fraction = startTime + duration
+
+                startStr: str = str(datetime.timedelta(seconds=round(startTime)))
+                endStr: str = str(datetime.timedelta(seconds=round(endTime)))
+
+                return startStr + ' - ' + endStr
 
             # just name for now, could make a name->fileName/filePath mapping
             # from './resources/asset/media-rep' elements, so we can put at
