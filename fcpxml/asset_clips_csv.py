@@ -9,13 +9,12 @@
 # Copyright:     (c) 2024 Greg Chapman
 # License:       MIT, see LICENSE
 # ------------------------------------------------------------------------------
-import datetime
 import typing as t
 from pathlib import Path
-from fractions import Fraction
 from xml.etree.ElementTree import Element
 
 from fcpxml import XMLParser
+from fcpxml import Utils
 
 class AssetClipsCSV:
     def __init__(self, xml: str | Path | Element):
@@ -23,38 +22,6 @@ class AssetClipsCSV:
 
     def writeCSV(self, csvPath: str | Path) -> bool:
         def assetClipCallback(csvObj, assetClipEl: Element) -> bool:
-            def getTimeRange(timeStamp: str, duration: str) -> str:
-                # timeStamp and duration both must be of the form:
-                # Ns (for an integer number of seconds) or N/Ms (for a fractional number of seconds)
-                if timeStamp[-1] != 's' and duration[-1] != 's':
-                    return timeStamp + '-' + duration
-                timeStamp = timeStamp[:-1]
-                duration = duration[:-1]
-
-                tsNumStr: str = ''
-                tsDenStr: str = '1'
-                durNumStr: str = ''
-                durDenStr: str = '1'
-
-                if '/' in timeStamp:
-                    tsNumStr, tsDenStr = timeStamp.split('/', 1)
-                else:
-                    tsNumStr = timeStamp
-
-                if '/' in duration:
-                    durNumStr, durDenStr = duration.split('/', 1)
-                else:
-                    durNumStr = duration
-
-                startTime: Fraction = Fraction(int(tsNumStr), int(tsDenStr))
-                dur: Fraction = Fraction(int(durNumStr), int(durDenStr))
-                endTime: Fraction = startTime + dur
-
-                startStr: str = str(datetime.timedelta(seconds=round(startTime)))
-                endStr: str = str(datetime.timedelta(seconds=round(endTime)))
-
-                return startStr + ' - ' + endStr
-
             # just name for now, could make a name->fileName/filePath mapping
             # from './resources/asset/media-rep' elements, so we can put at
             # least part of the file path in the name.
@@ -70,7 +37,7 @@ class AssetClipsCSV:
             for kwEl in assetClipEl.findall('keyword'):
                 startTime: str = kwEl.get('start', '')
                 duration: str = kwEl.get('duration', '')
-                timeRange: str = getTimeRange(startTime, duration)
+                timeRange: str = Utils.getTimeRange(startTime, duration)
                 keywordValue: str = kwEl.get('value', '')  # ', '-delimited list of keywords
                 keywordList: list[str] = []
                 if keywordValue:
@@ -79,22 +46,6 @@ class AssetClipsCSV:
                 assetClipDict[timeRange] = (keywordList, note)
 
             return True  # please keep feeding me Elements
-
-        def escapedCSVEntry(entry: str) -> str:
-            output: str = entry
-            if ',' in entry:
-                # first escape any double-quotes (so we can use double quotes around entry)
-                output = ''
-                for ch in entry:
-                    if ch == '"':
-                        output += ch + ch
-                    else:
-                        output += ch
-
-                # next, put double-quotes around entry to escape any commas.
-                output = '"' + output + '"'
-            return output
-
 
         if not self.parser.isValid:
             return False
@@ -121,7 +72,9 @@ class AssetClipsCSV:
             for assetName, assetClipDict in csvObj.items():
                 for timeRange, keywordsAndNote in assetClipDict.items():
                     print(
-                        f'{escapedCSVEntry(assetName)},{escapedCSVEntry(timeRange)}',
+                        f'{Utils.escapedCSVEntry(assetName)}'
+                        ','
+                        f'{Utils.escapedCSVEntry(timeRange)}',
                         end='',
                         file=f
                     )
@@ -129,11 +82,11 @@ class AssetClipsCSV:
                     note: str = keywordsAndNote[1]
                     if keywords or note:
                         if note:
-                            print(f',{escapedCSVEntry(note)}', end='', file=f)
+                            print(f',{Utils.escapedCSVEntry(note)}', end='', file=f)
                         else:
                             print(',', end='', file=f)
                         for keyword in keywords:
-                            print(f',{escapedCSVEntry(keyword)}', end='', file=f)
+                            print(f',{Utils.escapedCSVEntry(keyword)}', end='', file=f)
                     print('', file=f)  # EOL, finally
 
         return True
