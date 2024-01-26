@@ -40,8 +40,9 @@ class Utils:
         dur: Fraction = Fraction(int(durNumStr), int(durDenStr))
         endTime: Fraction = startTime + dur
 
-        startStr: str = str(datetime.timedelta(seconds=round(startTime)))
-        endStr: str = str(datetime.timedelta(seconds=round(endTime)))
+        # we truncate startTime down, and (whatever it's called) endTime up
+        startStr: str = str(datetime.timedelta(seconds=int(startTime)))
+        endStr: str = str(datetime.timedelta(seconds=int(endTime + 1.0)))
 
         return startStr + ' - ' + endStr
 
