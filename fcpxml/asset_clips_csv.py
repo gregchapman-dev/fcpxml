@@ -68,7 +68,7 @@ class AssetClipsCSV:
         # now take csvObj and write it out as a CSV file
         # name, timeRange, note, keyword1, keyword2, ...
         with open(csvPath, 'wt', encoding='utf-8') as f:
-            print('Movie Name,Time Range,Note,Keywords...', file=f)
+            print('Movie Name,Time Range,Note,Year,Month,Keywords...', file=f)
             for assetName, assetClipDict in csvObj.items():
                 for timeRange, keywordsAndNote in assetClipDict.items():
                     print(
@@ -81,11 +81,36 @@ class AssetClipsCSV:
                     keywords: list[str] = keywordsAndNote[0]
                     note: str = keywordsAndNote[1]
                     if keywords or note:
+                        # note first
                         if note:
                             print(f',{Utils.escapedCSVEntry(note)}', end='', file=f)
                         else:
                             print(',', end='', file=f)
+
+                        # year and month next (if present)
+                        year: str = ''
+                        month: str = ''
                         for keyword in keywords:
+                            if year and month:
+                                # stop looking if you found both
+                                break
+
+                            if not year and Utils.isYear(keyword):
+                                year = keyword
+                                continue
+
+                            if not month and Utils.isMonth(keyword):
+                                month = keyword
+                                continue
+
+                        print(f',{Utils.escapedCSVEntry(year)}' if year else ',', end='', file=f)
+                        print(f',{Utils.escapedCSVEntry(month)}' if month else ',', end='', file=f)
+
+                        for keyword in keywords:
+                            if year and keyword == year:
+                                continue
+                            if month and keyword == month:
+                                continue
                             print(f',{Utils.escapedCSVEntry(keyword)}', end='', file=f)
                     print('', file=f)  # EOL, finally
 

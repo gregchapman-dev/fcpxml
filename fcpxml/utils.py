@@ -9,6 +9,7 @@
 # License:       MIT, see LICENSE
 # ------------------------------------------------------------------------------
 import datetime
+import re
 from fractions import Fraction
 
 class Utils:
@@ -61,3 +62,29 @@ class Utils:
             # next, put double-quotes around entry to escape any commas.
             output = '"' + output + '"'
         return output
+
+    @staticmethod
+    def isYear(string: str) -> bool:
+        patt: str = r'^\d{4}(-\d{4})?$'  # 4 digits ('1999') or two years with hyphen ('1999-2001')
+        if re.match(patt, string):
+            return True
+        return False
+
+    MONTHS_SET: set[str] = set([
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+    ])
+
+    @staticmethod
+    def isMonth(string: str) -> bool:
+        return string in Utils.MONTHS_SET
