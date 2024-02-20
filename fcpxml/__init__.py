@@ -10,3 +10,4 @@
 from .utils import Utils
 from .xmlparser import XMLParser
 from .asset_clips_csv import AssetClipsCSV
+from .asset_clips_report import AssetClipsReport
