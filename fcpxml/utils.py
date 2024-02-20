@@ -13,6 +13,78 @@ import re
 from fractions import Fraction
 
 class Utils:
+    class TextWrapper:
+        def __init__(
+            self,
+            filewt,
+            wrapAt: int = 80,
+            wrapIndent: int = 4,
+            tab: int = 4,
+            dryRun: bool = False
+        ):
+            # filewt is a text file, open for writing:
+            #   with open(reportPath, 'wt', encoding='utf-8') as filewt:
+            #       wrapper = TextWrapper(filewt, wrapAt=100, wrapIndent=25)
+            self.filewt = filewt
+            self.wrapAt = wrapAt
+            self.wrapIndent = wrapIndent
+            self.tab = tab
+            self.dryRun = dryRun
+            self._currLinePos = 0
+
+        def write(self, text: str):
+            # how much can we fit (break at whitespace, but don't trim any whitespace except
+            # the one that caused the break)
+            lines: list[str] = self._split(text)
+
+            numLines: int = len(lines)
+            if numLines == 0:
+                return
+
+            for i, line in enumerate(lines):
+                if not self.dryRun:
+                    if i == numLines - 1:
+                        print(line, end='', file=self.filewt)
+                        continue
+                    print(line, file=self.filewt)
+
+            if lines[-1][-1] == '\n':
+                self._currLinePos = 0
+            else:
+                lastLineLength: int = len(lines[-1])
+                self._currLinePos += lastLineLength
+
+        def writeLine(self, text: str):
+            if text:
+                self.write(text)
+
+            if not self.dryRun:
+                print(file=self.filewt)
+                self._currLinePos = 0
+
+        def _split(self, text: str) -> list[str]:
+            import textwrap
+            initialIndent: str = ' ' * self._currLinePos
+            output: list[str] = textwrap.wrap(
+                text,
+                width=self.wrapAt,
+                initial_indent=initialIndent,
+                subsequent_indent=' ' * self.wrapIndent,
+                tabsize=self.tab,
+                break_long_words=False,
+            )
+
+            # We tricked textwrap.wrap with initial_indent.  We need to strip that off,
+            # since that text is already in the file.
+            if output:
+                output[0] = output[0][self._currLinePos:]
+            else:
+                # must have been all white-space; we want to keep that
+                output.append(text)
+
+            return output
+
+
     @staticmethod
     def getTimeRange(timeStamp: str, duration: str) -> str:
         # timeStamp and duration both must be of the form:
@@ -85,6 +157,28 @@ class Utils:
         'December'
     ])
 
+    MONTHS_ABBREV: dict[str, str] = {
+        'January': 'Jan',
+        'February': 'Feb',
+        'March': 'Mar',
+        'April': 'Apr',
+        'May': 'May',
+        'June': 'Jun',
+        'July': 'Jul',
+        'August': 'Aug',
+        'September': 'Sep',
+        'October': 'Oct',
+        'November': 'Nov',
+        'December': 'Dec',
+    }
+
     @staticmethod
     def isMonth(string: str) -> bool:
         return string in Utils.MONTHS_SET
+
+    @staticmethod
+    def abbreviate(text: str) -> str:
+        if text in Utils.MONTHS_SET:  # in set is faster than in dict
+            return Utils.MONTHS_ABBREV[text]
+        return text
+

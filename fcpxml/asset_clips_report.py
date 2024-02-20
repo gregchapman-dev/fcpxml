@@ -11,6 +11,7 @@
 import typing as t
 from pathlib import Path
 from xml.etree.ElementTree import Element
+import textwrap
 
 from fcpxml import XMLParser
 from fcpxml import Utils
@@ -75,14 +76,16 @@ class AssetClipsReport:
         #   ...
         # ...
         with open(reportPath, 'wt', encoding='utf-8') as f:
+            out = Utils.TextWrapper(f, wrapIndent=25)
             for assetName, assetClipDict in assetsObj.items():
-                print(f'{assetName}:', file=f)
+                out.writeLine(f'{assetName}:')
                 for timeRange, keywordsAndNote in assetClipDict.items():
                     keywords: list[str] = keywordsAndNote[0]
                     note: str = keywordsAndNote[1]
 
                     # timeRange first
-                    print(f'\t{timeRange}: ', end='', file=f)
+                    out.write(f'\t{timeRange}:')
+                    out.write(' ')  # out.write trims trailing spaces (but not pure whitespace)
 
                     # year and month next (if present in keywords)
                     year: str = ''
@@ -101,15 +104,20 @@ class AssetClipsReport:
                             continue
 
                     if month:
-                        print(month, end='', file=f)
+                        out.write(Utils.abbreviate(month))
                     if month and year:
-                        print(' ', end='', file=f)
+                        out.write(' ')
                     if year:
-                        print(year, end='', file=f)
+                        out.write(year)
                     if year or month:
-                        print(': ', end='', file=f)
+                        out.write(':')
+                        out.write(' ')
 
                     # note next
-                    print(f'{note}', file=f)  # EOL, finally
+                    if note:
+                        out.write(f'{note}')
+
+                    # EOL, finally
+                    out.writeLine('')
 
         return True
